@@ -50,32 +50,29 @@ sessionStorage = {}
 
 def main():
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text, process))
-
     up.start_polling()
     up.idle()
     
 # Функция получает тело запроса и возвращает ответ.
-#    logging.info('Request: %r', request.json)
-#
-#    response = {
-#        "version": request.json['version'],
-#        "session": request.json['session'],
-#        "response": {
-#            "end_session": False
-#        }
-#    }
-#
-#    handle_dialog(request.json, response)
-#
-#    logging.info('Response: %r', response)
-#
-#    return json.dumps(
-#        response,
-#        ensure_ascii=False,
-#        indent=2
-#    )
+    logging.info('Request: %r', request.json)
+
+    response = {
+        "version": request.json['version'],
+        "session": request.json['session'],
+        "response": {
+            "end_session": False
+        }
+    }
+
+    handle_dialog(request.json, response)
+
+    logging.info('Response: %r', response)
+
+    return json.dumps(
+        response,
+        ensure_ascii=False,
+        indent=2
+    )
 
 # Функция для непосредственной обработки диалога.
 def handle_dialog(req, res):
@@ -141,16 +138,16 @@ def get_suggests(user_id):
     
 # Welcome message
 def start(bot, update):
-    res['response']['text'] = "Привет, {user_name}! \n\n" + \
+    msg = "Привет, {user_name}! \n\n" + \
     "Меня можно спросить об акциях фондового рынка США \n" + \
     "и я покажу их оценку P/E и текущую цену. \n\n" + \
     "Например: расскажи об AAPL или NVDA"
-    return
+
     # Send the message
-#    bot.send_message(chat_id=update.message.chat_id,
-#                     text=msg.format(
-#                         user_name=update.message.from_user.first_name,
-#                         bot_name=bot.name))
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=msg.format(
+                         user_name=update.message.from_user.first_name,
+                         bot_name=bot.name))
 
 @run_async
 def process(bot, update):
