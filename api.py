@@ -7,7 +7,7 @@ import re
 import json
 import logging
 import yfinance as yf
-from yahoo_fin import stock_info as si
+from yahoo_finance import Share
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -60,9 +60,11 @@ def handle_dialog(req, res):
         return
         
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
-    msg = req['request']['original_utterance'].lower()
+    msg = req['request']['original_utterance'] + " "
     for ticker in tickers:
-        msft += si.get_live_price(ticker)
+        yahoo = Share(ticker)
+        sys.stdout.write("Hello " + yahoo.get_open())
+        msft += yahoo.get_open()
         
     res['response']['text'] = msg
     return
