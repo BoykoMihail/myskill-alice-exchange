@@ -5,35 +5,6 @@ from __future__ import unicode_literals
 # Импортируем модули для работы с JSON и логами.
 import json
 import logging
-import re
-from sys import path
-from decimal import Decimal
-from configparser import ConfigParser
-
-from mdapi import DataStorage, MDApiConnector
-from fundamental import FundamentalApi
-
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
-logger = logging.getLogger(__name__)
-
-# read config
-config = ConfigParser()
-config.read_file(open('config.ini'))
-
-# create connectors to API
-api = MDApiConnector(
-    client_id=config['API']['client_id'],
-    app_id=config['API']['app_id'],
-    key=config['API']['shared_key']
-)
-
-fapi = FundamentalApi()
-
-#storage = DataStorage(api)
-#storage.start()
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
