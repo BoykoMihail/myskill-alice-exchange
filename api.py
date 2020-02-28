@@ -4,10 +4,11 @@ from __future__ import unicode_literals
 
 # Импортируем модули для работы с JSON и логами.
 import re
+import sys
 import json
 import logging
 import yfinance as yf
-from yahoo_finance import Share
+from yahoo_fin import stock_info as si
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -61,10 +62,8 @@ def handle_dialog(req, res):
         
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
     msg = req['request']['original_utterance'] + " "
-#    for ticker in tickers:
-##        yahoo = Share(ticker)
-##        sys.stdout.write("Hello " + yahoo.get_open())
-#        msg += yahoo.get_open()
+    for ticker in tickers:
+        msg += str(si.get_live_price("ticker"))
         
     res['response']['text'] = msg
     return
@@ -138,3 +137,6 @@ def get_suggests(user_id):
         })
 
     return suggests
+    
+#if __name__ == '__main__':
+#    main()
