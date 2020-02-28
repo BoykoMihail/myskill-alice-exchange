@@ -131,6 +131,7 @@ def get_suggests(user_id):
         })
 
     return suggests
+
     
 # Welcome message
 def start(bot, update):
