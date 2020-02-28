@@ -6,3 +6,6 @@ requests
 urllib3
 yfinance
 lxml
+requests_html
+yahoo_fin
+

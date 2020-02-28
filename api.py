@@ -3,8 +3,11 @@
 from __future__ import unicode_literals
 
 # Импортируем модули для работы с JSON и логами.
+import re
 import json
 import logging
+import yfinance as yf
+from yahoo_fin import stock_info as si
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -48,34 +51,65 @@ def handle_dialog(req, res):
     if req['session']['new']:
         # Это новый пользователь.
         # Инициализируем сессию и поприветствуем его.
+        msg = "Привет! \n\n" + \
+        "Меня можно спросить об акциях фондового рынка США \n" + \
+        "и я покажу их оценку P/E и текущую цену. \n\n" + \
+        "Например: расскажи об AAPL или NVDA"
 
-        sessionStorage[user_id] = {
-            'suggests': [
-                "Не хочу.",
-                "Не буду.",
-                "Отстань!",
-            ]
-        }
-
-        res['response']['text'] = 'Привет! Купи слона!'
-#        res['response']['buttons'] = get_suggests(user_id)
+        res['response']['text'] = msg
         return
+        
+    tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
+    msg = req['request']['original_utterance'].lower()
+    for ticker in tickers:
+        msft += si.get_live_price(ticker)
+        
+    res['response']['text'] = msg
+    return
+#        stock = storage.stocks.get(ticker)
+#        if not stock: continue
+#
+#        eps = fapi.request(ticker).get('EarningsShare')
+#        if not eps:
+#            logger.warning("Can't fetch EPS for {}".format(ticker))
+#            continue
+#
+#        price = api.get_last_ohlc_bar(stock['id'])
+#        ratio = Decimal("%.4f" % price['close']) / Decimal(eps)
+#
+#        msg += "{ticker} ({name}, {exchange}): EPS {eps}, P/E {ratio}, цена ${price} \n".format(
+#            ticker = ticker,
+#            name = stock['description'],
+#            exchange = stock['exchange'],
+#            ratio = "%.2f" % ratio,
+#            price = price['close'],
+#            eps = eps
+#        )
 
-    # Обрабатываем ответ пользователя.
-    if req['request']['original_utterance'].lower() in [
-        'ладно',
-        'куплю',
-        'покупаю',
-        'хорошо',
-    ]:
-        # Пользователь согласился, прощаемся.
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        return
+#    # Обрабатываем ответ пользователя.
+#    if req['request']['original_utterance'].lower() in [
+#        'ладно',
+#        'куплю',
+#        'покупаю',
+#        'хорошо',
+#    ]:
+#        # Пользователь согласился, прощаемся.
+#        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+#        return
 
     # Если нет, то убеждаем его купить слона!
-    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
-        req['request']['original_utterance']
-    )
+
+#    msft = yf.Ticker("MSFT")
+#
+#    # get stock info
+#    ttt = msft.info
+#    text = ""
+#    for t in ttt:
+#        text += t
+
+#    'Все говорят "%s", а ты купи слона!' + text % (
+#        req['request']['original_utterance']
+#    )
 #    res['response']['buttons'] = get_suggests(user_id)
 
 # Функция возвращает две подсказки для ответа.
