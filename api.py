@@ -10,7 +10,6 @@ import logging
 from flask import Flask, request
 app = Flask(__name__)
 
-#import yfinance as yf
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -103,4 +102,3 @@ def get_suggests(user_id):
         })
 
     return suggests
-
