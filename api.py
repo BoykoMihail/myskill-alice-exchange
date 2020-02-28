@@ -113,7 +113,7 @@ def handle_dialog(req, res):
     # get stock info
     ttt = msft.info
     
-    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' + ttt % (
+    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
         req['request']['original_utterance']
     )
     res['response']['buttons'] = get_suggests(user_id)
