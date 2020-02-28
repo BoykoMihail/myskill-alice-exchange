@@ -32,8 +32,8 @@ api = MDApiConnector(
 
 fapi = FundamentalApi()
 
-storage = DataStorage(api)
-storage.start()
+#storage = DataStorage(api)
+#storage.start()
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
