@@ -10,6 +10,9 @@ from sys import path
 from decimal import Decimal
 from configparser import ConfigParser
 
+from mdapi import DataStorage, MDApiConnector
+from fundamental import FundamentalApi
+
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
 app = Flask(__name__)
