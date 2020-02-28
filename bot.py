@@ -13,6 +13,16 @@ from telegram.ext.dispatcher import run_async
 from mdapi import DataStorage, MDApiConnector
 from fundamental import FundamentalApi
 
+# Импортируем подмодули Flask для запуска веб-сервиса.
+from flask import Flask, request
+app = Flask(__name__)
+
+# Хранилище данных о сессиях.
+sessionStorage = {}
+
+# Задаем параметры приложения Flask.
+@app.route("/", methods=['POST'])
+
 import logging
 
 # Enable logging
@@ -93,7 +103,7 @@ def process(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=msg)
 
 
-if __name__ == "__main__":
+def main():
     # Add handlers to dispatcher
 #    dispatcher.add_handler(CommandHandler("start", start))
 #    dispatcher.add_handler(MessageHandler(Filters.text, process))
