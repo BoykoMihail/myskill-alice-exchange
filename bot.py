@@ -14,9 +14,9 @@ from decimal import Decimal
 
 from configparser import ConfigParser
 
-from telegram import ParseMode, Emoji
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram.ext.dispatcher import run_async
+#from telegram import ParseMode, Emoji
+#from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+#from telegram.ext.dispatcher import run_async
 
 from mdapi import DataStorage, MDApiConnector
 from fundamental import FundamentalApi
@@ -56,8 +56,8 @@ api = MDApiConnector(
 fapi = FundamentalApi()
 
 # Create telegram poller with token from settings
-up = Updater(token=config['Telegram']['token'], workers=32)
-dispatcher = up.dispatcher
+#up = Updater(token=config['Telegram']['token'], workers=32)
+#dispatcher = up.dispatcher
 
 # start stock storage
 storage = DataStorage(api)
