@@ -1,4 +1,12 @@
 # -*- coding:utf-8 -*-
+# coding: utf-8
+# Импортирует поддержку UTF-8.
+from __future__ import unicode_literals
+
+# Импортируем модули для работы с JSON и логами.
+import json
+import logging
+
 
 import re
 from sys import path
@@ -16,6 +24,9 @@ from fundamental import FundamentalApi
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
 app = Flask(__name__)
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 # Хранилище данных о сессиях.
 sessionStorage = {}
