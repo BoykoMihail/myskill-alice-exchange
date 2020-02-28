@@ -49,26 +49,33 @@ sessionStorage = {}
 @app.route("/", methods=['POST'])
 
 def main():
+
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(MessageHandler(Filters.text, process))
+
+    up.start_polling()
+    up.idle()
+    
 # Функция получает тело запроса и возвращает ответ.
-    logging.info('Request: %r', request.json)
-
-    response = {
-        "version": request.json['version'],
-        "session": request.json['session'],
-        "response": {
-            "end_session": False
-        }
-    }
-
-    handle_dialog(request.json, response)
-
-    logging.info('Response: %r', response)
-
-    return json.dumps(
-        response,
-        ensure_ascii=False,
-        indent=2
-    )
+#    logging.info('Request: %r', request.json)
+#
+#    response = {
+#        "version": request.json['version'],
+#        "session": request.json['session'],
+#        "response": {
+#            "end_session": False
+#        }
+#    }
+#
+#    handle_dialog(request.json, response)
+#
+#    logging.info('Response: %r', response)
+#
+#    return json.dumps(
+#        response,
+#        ensure_ascii=False,
+#        indent=2
+#    )
 
 # Функция для непосредственной обработки диалога.
 def handle_dialog(req, res):
