@@ -183,11 +183,3 @@ def process(bot, update):
               "Попробуйте спросить о чем-то популярном, вроде GOOG или AAPL."
 
     bot.send_message(chat_id=update.message.chat_id, text=msg)
-
-def main():
-    # Add handlers to dispatcher
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text, process))
-
-    up.start_polling()
-    up.idle()
