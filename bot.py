@@ -12,21 +12,6 @@ from configparser import ConfigParser
 from mdapi import DataStorage, MDApiConnector
 from fundamental import FundamentalApi
 
-# Импортируем подмодули Flask для запуска веб-сервиса.
-from flask import Flask, request
-app = Flask(__name__)
-
-
-logging.basicConfig(level=logging.DEBUG)
-
-# Хранилище данных о сессиях.
-sessionStorage = {}
-
-# Задаем параметры приложения Flask.
-@app.route("/", methods=['POST'])
-
-import logging
-
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
