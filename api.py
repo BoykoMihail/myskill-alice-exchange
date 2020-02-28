@@ -19,28 +19,30 @@ from configparser import ConfigParser
 from mdapi import DataStorage, MDApiConnector
 from fundamental import FundamentalApi
 
-## Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+import yfinance as yf
 
-logger = logging.getLogger(__name__)
-
-# read config
-config = ConfigParser()
-config.read_file(open('config.ini'))
-
-# create connectors to API
-api = MDApiConnector(
-    client_id=config['API']['client_id'],
-    app_id=config['API']['app_id'],
-    key=config['API']['shared_key']
-)
-
-fapi = FundamentalApi()
-
-# start stock storage
-storage = DataStorage(api)
-storage.start()
+### Enable logging
+#logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#                    level=logging.INFO)
+#
+#logger = logging.getLogger(__name__)
+#
+## read config
+#config = ConfigParser()
+#config.read_file(open('config.ini'))
+#
+## create connectors to API
+#api = MDApiConnector(
+#    client_id=config['API']['client_id'],
+#    app_id=config['API']['app_id'],
+#    key=config['API']['shared_key']
+#)
+#
+#fapi = FundamentalApi()
+#
+## start stock storage
+#storage = DataStorage(api)
+#storage.start()
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -105,7 +107,13 @@ def handle_dialog(req, res):
         return
 
     # Если нет, то убеждаем его купить слона!
-    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
+    
+    msft = yf.Ticker("MSFT")
+
+    # get stock info
+    ttt = msft.info
+    
+    res['response']['text'] = 'Все говорят "%s", а ты купи слона!' + ttt % (
         req['request']['original_utterance']
     )
     res['response']['buttons'] = get_suggests(user_id)
