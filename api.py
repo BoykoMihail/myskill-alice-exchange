@@ -49,9 +49,6 @@ sessionStorage = {}
 @app.route("/", methods=['POST'])
 
 def main():
-
-    up.start_polling()
-    up.idle()
     
 # Функция получает тело запроса и возвращает ответ.
     logging.info('Request: %r', request.json)
