@@ -61,10 +61,10 @@ def handle_dialog(req, res):
         
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
     msg = req['request']['original_utterance'] + " "
-    for ticker in tickers:
-#        yahoo = Share(ticker)
-#        sys.stdout.write("Hello " + yahoo.get_open())
-        msft += yahoo.get_open()
+#    for ticker in tickers:
+##        yahoo = Share(ticker)
+##        sys.stdout.write("Hello " + yahoo.get_open())
+#        msg += yahoo.get_open()
         
     res['response']['text'] = msg
     return
