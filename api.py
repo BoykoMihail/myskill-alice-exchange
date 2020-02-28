@@ -5,20 +5,10 @@ from __future__ import unicode_literals
 # Импортируем модули для работы с JSON и логами.
 import json
 import logging
-import sys
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
 app = Flask(__name__)
-
-#import re
-#from sys import path
-#from decimal import Decimal
-#
-#from configparser import ConfigParser
-#
-#from mdapi import DataStorage, MDApiConnector
-#from fundamental import FundamentalApi
 
 #import yfinance as yf
 
@@ -84,7 +74,6 @@ def handle_dialog(req, res):
         return
 
     # Если нет, то убеждаем его купить слона!
-    
     res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
         req['request']['original_utterance']
     )
@@ -114,6 +103,4 @@ def get_suggests(user_id):
         })
 
     return suggests
-    
-#if __name__ == '__main__':
-#    main()
+
