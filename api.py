@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 # Импортируем модули для работы с JSON и логами.
 import json
 import logging
+import sys
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -108,11 +109,6 @@ def handle_dialog(req, res):
 
     # Если нет, то убеждаем его купить слона!
     
-    msft = yf.Ticker("MSFT")
-
-    # get stock info
-    ttt = msft.info
-    
     res['response']['text'] = 'Все говорят "%s", а ты купи слона!' % (
         req['request']['original_utterance']
     )
@@ -142,6 +138,16 @@ def get_suggests(user_id):
         })
 
     return suggests
+    
+if __name__ == '__main__':
+    main()
+#        
+#    msft = yf.Ticker("MSFT")
+#
+#    # get stock info
+#    ttt = msft.info
+#    for t in ttt:
+#        sys.stdout.write("Hello!!!!!!   " + t)
 
 ## Welcome message
 #def start(bot, update):

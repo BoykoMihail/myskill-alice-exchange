@@ -5,3 +5,4 @@ PyJWT
 requests
 urllib3
 yfinance
+lxml
