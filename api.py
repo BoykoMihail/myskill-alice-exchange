@@ -63,7 +63,7 @@ def handle_dialog(req, res):
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
     msg = req['request']['original_utterance'] + " "
     for ticker in tickers:
-        msg += str(si.get_live_price("ticker"))
+        msg += str(si.get_live_price(ticker))
         
     res['response']['text'] = msg
     return
