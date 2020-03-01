@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import re
 import json
 from yahoo_fin import stock_info as si
+import requests
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -32,6 +33,24 @@ def main():
         indent=2
     )
 
+def get_symbol(symbol):
+    url = "http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={}&region=1&lang=en".format(symbol)
+
+    result = requests.get(url).json()
+
+    for x in result['ResultSet']['Result']:
+        if x['symbol'] == symbol:
+            return x['name']
+            
+def get_exchDisp(symbol):
+    url = "http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={}&region=1&lang=en".format(symbol)
+
+    result = requests.get(url).json()
+
+    for x in result['ResultSet']['Result']:
+        if x['symbol'] == symbol:
+            return x['exchDisp']
+            
 # Функция для непосредственной обработки диалога.
 def handle_dialog(req, res):
     user_id = req['session']['user_id']
@@ -48,10 +67,18 @@ def handle_dialog(req, res):
         return
         
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
-    msg = req['request']['original_utterance'] + " "
+    msg = ""
     
     for ticker in tickers:
-        msg += str(si.get_live_price(ticker))
+        name = get_symbol(ticker)
+        price = str(si.get_live_price(ticker))
+        ex_desc = get_exchDisp(ticker)
+        msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
+            ticker = ticker,
+            name = name,
+            exchange = ex_desc,
+            price = price
+        )
         
     res['response']['text'] = msg
     return
