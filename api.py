@@ -59,18 +59,49 @@ def handle_dialog(req, res):
         # Это новый пользователь.
         # Инициализируем сессию и поприветствуем его.
         
-        msg = next(iter(ttt)) + " Привет! \n\n" + \
+        msg = " Привет! \n\n" + \
         "Меня можно спросить об акциях фондового рынка США \n" + \
-        "и я покажу их оценку P/E и текущую цену. \n\n" + \
         "Например: расскажи об AAPL или NVDA"
 
         res['response']['text'] = msg
         return
         
+    if req['request']['original_utterance'] == "Помощь":
+        # Помощь
+        
+        msg = "Меня можно спросить об акциях фондового рынка США \n" + \
+            "Например: расскажи об AAPL или NVDA"
+
+        res['response']['text'] = msg
+        return
+        
+    if req['request']['original_utterance'] == "Что ты умеешь?":
+        # Помощь
+        
+        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
+            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+
+        res['response']['text'] = msg
+        return
+        
+    if req['request']['original_utterance'] == "Что ты умеешь":
+        # Помощь
+        
+        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
+            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+
+        res['response']['text'] = msg
+        return
+        
+    
+        
     tickers = re.findall(r'[A-Z]{1,4}', req['request']['original_utterance'])
-    msg = ""
+    msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
     
     for ticker in tickers:
+        msg = ""
         name = get_symbol(ticker)
         price = str(si.get_live_price(ticker))
         ex_desc = get_exchDisp(ticker)
