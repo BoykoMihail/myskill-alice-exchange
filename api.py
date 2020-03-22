@@ -66,7 +66,7 @@ def handle_dialog(req, res):
         res['response']['text'] = msg
         return
         
-    if req['request']['original_utterance'] == "Помощь":
+    if req['request']['original_utterance'].upper() == "ПОМОЩЬ":
         # Помощь
         
         msg = "Меня можно спросить об акциях фондового рынка США \n" + \
@@ -75,7 +75,7 @@ def handle_dialog(req, res):
         res['response']['text'] = msg
         return
         
-    if req['request']['original_utterance'] == "Что ты умеешь?":
+    if req['request']['original_utterance'].upper() == "ЧТО ТЫ УМЕЕШЬ?":
         # Помощь
         
         msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
@@ -85,7 +85,27 @@ def handle_dialog(req, res):
         res['response']['text'] = msg
         return
         
-    if req['request']['original_utterance'] == "Что ты умеешь":
+    if req['request']['original_utterance'].upper() == "ЧТО ТЫ УМЕЕШЬ":
+        # Помощь
+        
+        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
+            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+
+        res['response']['text'] = msg
+        return
+        
+    if req['request']['original_utterance'].upper() == "ЧТО УМЕЕШЬ":
+        # Помощь
+        
+        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
+            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+
+        res['response']['text'] = msg
+        return
+        
+    if req['request']['original_utterance'].upper() == "ЧТО УМЕЕШЬ?":
         # Помощь
         
         msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
