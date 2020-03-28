@@ -10,4 +10,5 @@ requests_html
 yahoo-finance
 realtime-stock
 yahoo_fin
+firebase-admin
 

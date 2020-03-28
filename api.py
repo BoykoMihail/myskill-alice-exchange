@@ -8,6 +8,8 @@ import json
 from yahoo_fin import stock_info as si
 import requests
 
+import firebase_admin
+from firebase_admin import credentials, firestore
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
 app = Flask(__name__)
@@ -16,7 +18,8 @@ app = Flask(__name__)
 @app.route("/", methods=['POST'])
 
 def main():
-
+    
+    
     response = {
         "version": request.json['version'],
         "session": request.json['session'],
@@ -62,6 +65,18 @@ def handle_dialog(req, res):
         msg = " Привет! \n\n" + \
         "Меня можно спросить об акциях фондового рынка США \n" + \
         "Например: расскажи об AAPL или NVDA"
+        
+        # TO DO
+
+        cred = credentials.Certificate("/Users/mikhailboyko/myskill-alice/serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+                
+        datab = firestore.client()
+        usersref = datab.collection(u'tickers')
+        docs = usersref.stream()
+        
+        for doc in docs:
+            msg = msg + '{} : {}'.format(doc.id,doc.to_dict())
 
         res['response']['text'] = msg
         return
