@@ -1,14 +1,9 @@
 Flask
 certifi
 future
-PyJWT
 requests
-urllib3
 yfinance
-lxml
-requests_html
 yahoo-finance
-realtime-stock
 yahoo_fin
 firebase-admin
 

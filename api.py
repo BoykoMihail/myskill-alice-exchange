@@ -66,15 +66,16 @@ def handle_dialog(req, res):
         "Меня можно спросить об акциях фондового рынка США \n" + \
         "Например: расскажи об AAPL или NVDA"
         
-        # TO DO
+#        # TO DO
 
-        cred = credentials.Certificate("/Users/mikhailboyko/myskill-alice/serviceAccountKey.json")
+
+        cred = credentials.Certificate("serviceAccountKey.json")
         firebase_admin.initialize_app(cred)
-                
+
         datab = firestore.client()
         usersref = datab.collection(u'tickers')
         docs = usersref.stream()
-        
+
         for doc in docs:
             msg = msg + '{} : {}'.format(doc.id,doc.to_dict())
 
