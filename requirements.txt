@@ -7,4 +7,5 @@ yahoo-finance
 yahoo_fin
 firebase-admin
 names_translator
-
+googletrans
+wikipedia
