@@ -11,7 +11,8 @@ import random
 import string
 
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials
+from firebase_admin import db
 import yfinance as yf
 import wikipedia
 from googletrans import Translator
@@ -44,7 +45,15 @@ def main():
         ensure_ascii=False,
         indent=2
     )
-    
+
+def removeVowels(string):
+    newstr = string.upper();
+    vowels = ('A', 'E', 'I', 'O', 'U','Y');
+    for x in string:
+        if x in vowels:
+            newstr = newstr.replace(x,"");
+    return newstr;
+
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
@@ -84,7 +93,8 @@ def listToString(s,t):
     return str1[:-1]
     
 def getTickers(text):
-    tickers = re.findall(r'[A-Z]{1,4}', text)
+    tickers = []
+#    re.findall(r'[A-Z]{1,4}', text)
     tr = Transliterator()
     textCurrent = text
     textCurrent = textCurrent.replace(',', ' ')
@@ -97,12 +107,12 @@ def getTickers(text):
         translate = ""
         for val in tr.transliterate(t, "", ""):
             if isEnglish(val):
-                translate = val
-                break
-        textTranslate.append(translate)
-        temp.append(translate)
+                if len(val) > 3:
+                    translate = val
+                    textTranslate.append(translate)
+                    temp.append(translate)
     
-
+    
     if len(temp) > 2:
         for item in itertools.combinations(temp, 3):
             textTranslate.append(' '.join(item))
@@ -111,30 +121,59 @@ def getTickers(text):
         for item in itertools.combinations(temp, 2):
             textTranslate.append(' '.join(item))
             textTranslate.append('-'.join(item))
+            
+    cred = credentials.Certificate('serviceAccountKey.json')
+    # Initialize the app with a service account, granting admin privileges
+    firebaseApp = firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://boyko-quotes.firebaseio.com/'
+    })
     
-    cred = credentials.Certificate("serviceAccountKey.json")
-    firebaseApp = firebase_admin.initialize_app(cred)
-    datab = firestore.client()
+    ref = db.reference('-M5Bp33uufz6f2ayRMuB')
+    arr = ref.get()
 
     try:
-
-        usersref = datab.collection(u'tickers')
-        docs = usersref.stream()
-        
+    
         tickerCompanyName = []
+        tickerCompanyNameSplit = []
         tickerName = []
         tickerNameMap = {}
-        for doc in docs:
-            tickerCompanyName.append(doc.to_dict()['EnglishName'])
-            tickerNameMap[doc.to_dict()['EnglishName']] = doc.to_dict()['Ticker']
+        tickerNameMapSplit = {}
+        for doc in arr:
+            tickerCompanyName.append(doc['Name'])
+            tkr = doc['Symbol']
+            tickerName.append(tkr)
+            tickerNameMap[doc['Name']] = tkr
+            for it in doc['Name'].split(' '):
+                tickerCompanyNameSplit.append(it)
+                tkr = doc['Symbol']
+                tickerNameMapSplit[it] = tkr
         
         realNames = []
         for t in textTranslate:
             findName = difflib.get_close_matches(t, tickerCompanyName)
             if len(findName) > 0:
                 if tickerNameMap[findName[0]] not in tickers :
-                    tickers.append(tickerNameMap[findName[0]])
+#                    tickers.append(tickerNameMap[findName[0]])
+                    realNames.append(findName[0])
+                    
+        if len(realNames) > 0:
+            arr = [0] * len(realNames)
+            for t in textTranslate:
+                temp = difflib.get_close_matches(t, realNames)
+                if len(temp) > 0:
+                    arr[realNames.index(temp[0])] += 1
+                    
+            tickers.append(tickerNameMap[realNames[arr.index(max(arr))]])
 
+        if len(tickers) == 0:
+            for t in textTranslate:
+                findName = difflib.get_close_matches(removeVowels(t), tickerName)
+                if len(findName) > 0:
+                    if findName[0] not in tickers :
+                        tickers.append(findName[0])
+                        
+        
+        
         firebase_admin.delete_app(firebaseApp)
         
         return tickers
@@ -149,23 +188,21 @@ def getTickers(text):
 def getCompaniInfo(tickers):
     result = ""
     translator = Translator()
+    url = ""
+    name = ""
     for tic in tickers:
-        wikipedia.set_lang("ru")
+        wikipedia.set_lang("en")
         name = get_symbol(tic)
-        info = wikipedia.summary(name, sentences=2)
-        name = name.split(' ')[0].replace(',', '').replace('.','')
-        links = wikipedia.WikipediaPage(name.split(' ')[0])
-#        msft = yf.Ticker(tic)
-#        info = str(msft.get_info()['longBusinessSummary'])
-#        translations = translator.translate(info, dest='ru')
-        result = result + info + "..."
-        url = 'https://ru.wikipedia.org/wiki/{}'.format(name)
-    return result, url, name
+        try:
+            info = wikipedia.summary(name, sentences=2)
+#            name = name.split(' ')[0].replace(',', '').replace('.','')
+            links = wikipedia.WikipediaPage(name.split(' ')[0])
+            result = result + info + "..."
+            url = 'https://ru.wikipedia.org/wiki/{}'.format(name)
+            return result, url, name
+        except Exception as e:
+            return "К сожалению по компании {} Ничего не найдено :(".format(name), "", ""
     
-#        for te in translations.text.split('. ')[:1]:
-#            result = result + te
-#    return result + "..."
-#    расскажи о MSFT
 
 def get_suggests(name, url):
     
@@ -182,6 +219,8 @@ def get_suggests(name, url):
 def handle_dialog(req, res):
     user_id = req['session']['user_id']
 
+    textForm = req['request']['original_utterance'].upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").lstrip()
+    
     if req['session']['new']:
         # Это новый пользователь.
         # Инициализируем сессию и поприветствуем его.
@@ -194,26 +233,26 @@ def handle_dialog(req, res):
         return
     
     listHelp = ["ПОМОЩЬ", "ЧТО ТЫ УМЕЕШЬ?", "ЧТО ТЫ УМЕЕШЬ", "ЧТО УМЕЕШЬ", "ЧТО УМЕЕШЬ?"]
-    listAbout = "РАССКАЖИ О"
+    listAbout = "ВИКИ О"
     
-    if req['request']['original_utterance'].upper() in listHelp:
+    if textForm in listHelp:
         # Помощь
         
         msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
             "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
-            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672\n" + \
+            "Или можешь спросить у меня иноврмацию о компании!" + \
+            "Например Ты можешь сказать: Вики о AAPL"
 
         res['response']['text'] = msg
         return
         
-    if req['request']['original_utterance'].upper().find(listAbout) != -1:
-
+    if textForm.find(listAbout) != -1:
         text = req['request']['original_utterance']
-        text = text.replace(listAbout, "")
+        text = text.replace(listAbout, "").lstrip()
         tickers = getTickers(text)
         msg, url, name = getCompaniInfo(tickers)
-        if msg == "":
-            msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
+        if url == "":
             res['response']['text'] = msg
         else:
             res['response']['text'] = msg
@@ -221,7 +260,7 @@ def handle_dialog(req, res):
         return
     
     tickers = getTickers(req['request']['original_utterance'])
-
+    
     msg = ""
     if len(tickers) == 0:
         msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
@@ -229,64 +268,20 @@ def handle_dialog(req, res):
         msg = ""
         for ticker in tickers:
             name = get_symbol(ticker)
-            price = str(si.get_live_price(ticker))
-            ex_desc = get_exchDisp(ticker)
-            msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
-                ticker = ticker,
-                name = name,
-                exchange = ex_desc,
-                price = price
-            )
+            try:
+                price = str(si.get_live_price(ticker))
+                ex_desc = get_exchDisp(ticker)
+                msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
+                    ticker = ticker,
+                    name = name,
+                    exchange = ex_desc,
+                    price = price
+                )
+            except Exception as e:
+                print(e)
         
     res['response']['text'] = msg
     
     return
 
-if __name__ == "__main__":
-    text = "расскажи о тесла"
-    listHelp = ["ПОМОЩЬ", "ЧТО ТЫ УМЕЕШЬ?", "ЧТО ТЫ УМЕЕШЬ", "ЧТО УМЕЕШЬ", "ЧТО УМЕЕШЬ?"]
-    listAbout = "РАССКАЖИ О"
-
-    if text.upper() in listHelp:
-        # Помощь
-
-        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
-            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
-            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
-
-        print(msg)
-
-    if text.upper().find(listAbout) != -1:
-        user_id = 1
-        texst = text
-        texst = texst.replace(listAbout, "")
-        tickers = getTickers(texst)
-        msg, url, name = getCompaniInfo(tickers)
-        if msg == "":
-            msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
-            print(msg)
-        else:
-            print(msg + "12")
-            print(get_suggests(name, url))
-
-    tickers = getTickers(text)
-
-    msg = ""
-    if len(tickers) == 0:
-        msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
-    else:
-        msg = ""
-        for ticker in tickers:
-            name = get_symbol(ticker)
-            price = str(si.get_live_price(ticker))
-            ex_desc = get_exchDisp(ticker)
-            msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
-                ticker = ticker,
-                name = name,
-                exchange = ex_desc,
-                price = price
-            )
-
-    print(msg)
-    
 
