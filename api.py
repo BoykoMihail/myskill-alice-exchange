@@ -7,25 +7,23 @@ import re
 import json
 from yahoo_fin import stock_info as si
 import requests
-import random
 import string
 
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
-import yfinance as yf
 import wikipedia
-from googletrans import Translator
 from names_translator import Transliterator
 import difflib
 import itertools
-from math import modf
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
 app = Flask(__name__)
 
 # Задаем параметры приложения Flask.
 @app.route("/", methods=['POST'])
+
+
 
 def main():
     
@@ -53,11 +51,6 @@ def removeVowels(string):
         if x in vowels:
             newstr = newstr.replace(x,"");
     return newstr;
-
-def randomString(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
     
 def get_symbol(symbol):
     url = "http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={}&region=1&lang=en".format(symbol)
@@ -94,11 +87,9 @@ def listToString(s,t):
     
 def getTickers(text):
     tickers = []
-#    re.findall(r'[A-Z]{1,4}', text)
+    print(text)
     tr = Transliterator()
     textCurrent = text
-    textCurrent = textCurrent.replace(',', ' ')
-    textCurrent = textCurrent.replace('.', '')
     textArray = textCurrent.split(' ')
     textTranslate = []
     temp = []
@@ -111,16 +102,10 @@ def getTickers(text):
                     translate = val
                     textTranslate.append(translate)
                     temp.append(translate)
-    
-    
+        
     if len(temp) > 2:
         for item in itertools.combinations(temp, 3):
             textTranslate.append(' '.join(item))
-            textTranslate.append('-'.join(item))
-    if len(temp) > 1:
-        for item in itertools.combinations(temp, 2):
-            textTranslate.append(' '.join(item))
-            textTranslate.append('-'.join(item))
             
     cred = credentials.Certificate('serviceAccountKey.json')
     # Initialize the app with a service account, granting admin privileges
@@ -137,25 +122,22 @@ def getTickers(text):
         tickerCompanyNameSplit = []
         tickerName = []
         tickerNameMap = {}
+        tickerNameMapRevert = {}
         tickerNameMapSplit = {}
         for doc in arr:
-            tickerCompanyName.append(doc['Name'])
+            docc = doc['Name'].upper()
+            tickerCompanyName.append(docc)
             tkr = doc['Symbol']
             tickerName.append(tkr)
-            tickerNameMap[doc['Name']] = tkr
-            for it in doc['Name'].split(' '):
-                tickerCompanyNameSplit.append(it)
-                tkr = doc['Symbol']
-                tickerNameMapSplit[it] = tkr
+            tickerNameMap[docc] = tkr
+            tickerNameMapRevert[tkr] = docc
         
         realNames = []
         for t in textTranslate:
             findName = difflib.get_close_matches(t, tickerCompanyName)
             if len(findName) > 0:
-                if tickerNameMap[findName[0]] not in tickers :
-#                    tickers.append(tickerNameMap[findName[0]])
+                if findName[0] not in realNames :
                     realNames.append(findName[0])
-                    
         if len(realNames) > 0:
             arr = [0] * len(realNames)
             for t in textTranslate:
@@ -164,8 +146,8 @@ def getTickers(text):
                     arr[realNames.index(temp[0])] += 1
                     
             tickers.append(tickerNameMap[realNames[arr.index(max(arr))]])
-
-        if len(tickers) == 0:
+            
+        else:
             for t in textTranslate:
                 findName = difflib.get_close_matches(removeVowels(t), tickerName)
                 if len(findName) > 0:
@@ -176,7 +158,7 @@ def getTickers(text):
         
         firebase_admin.delete_app(firebaseApp)
         
-        return tickers
+        return tickerNameMapRevert, tickers
 
 
     except Exception as e:
@@ -187,7 +169,6 @@ def getTickers(text):
         
 def getCompaniInfo(tickers):
     result = ""
-    translator = Translator()
     url = ""
     name = ""
     for tic in tickers:
@@ -195,7 +176,6 @@ def getCompaniInfo(tickers):
         name = get_symbol(tic)
         try:
             info = wikipedia.summary(name, sentences=2)
-#            name = name.split(' ')[0].replace(',', '').replace('.','')
             links = wikipedia.WikipediaPage(name.split(' ')[0])
             result = result + info + "..."
             url = 'https://ru.wikipedia.org/wiki/{}'.format(name)
@@ -218,8 +198,8 @@ def get_suggests(name, url):
 # Функция для непосредственной обработки диалога.
 def handle_dialog(req, res):
     user_id = req['session']['user_id']
-
-    textForm = req['request']['original_utterance'].upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").lstrip()
+    textForm = req['request']['original_utterance'].upper()
+#    textForm = req['request']['original_utterance'].upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").lstrip()
     
     if req['session']['new']:
         # Это новый пользователь.
@@ -248,7 +228,7 @@ def handle_dialog(req, res):
         return
         
     if textForm.find(listAbout) != -1:
-        text = req['request']['original_utterance']
+        text = textForm
         text = text.replace(listAbout, "").lstrip()
         tickers = getTickers(text)
         msg, url, name = getCompaniInfo(tickers)
@@ -259,7 +239,7 @@ def handle_dialog(req, res):
             res['response']['buttons'] = get_suggests(name, url)
         return
     
-    tickers = getTickers(req['request']['original_utterance'])
+    tickerNameMap, tickers = getTickers(textForm)
     
     msg = ""
     if len(tickers) == 0:
@@ -267,14 +247,13 @@ def handle_dialog(req, res):
     else:
         msg = ""
         for ticker in tickers:
-            name = get_symbol(ticker)
+            name = tickerNameMap[ticker]
             try:
                 price = str(si.get_live_price(ticker))
-                ex_desc = get_exchDisp(ticker)
-                msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
+#                ex_desc = get_exchDisp(ticker)
+                msg += "{ticker} ({name}): цена ${price} \n".format(
                     ticker = ticker,
                     name = name,
-                    exchange = ex_desc,
                     price = price
                 )
             except Exception as e:
@@ -284,4 +263,56 @@ def handle_dialog(req, res):
     
     return
 
+if __name__ == "__main__":
+#//Trevena
+    text = "Applied Genetic".upper().lstrip()
+    listHelp = ["ПОМОЩЬ", "ЧТО ТЫ УМЕЕШЬ?", "ЧТО ТЫ УМЕЕШЬ", "ЧТО УМЕЕШЬ", "ЧТО УМЕЕШЬ?"]
+    listAbout = "ВИКИ О"
+
+    if text.upper() in listHelp:
+        # Помощь
+
+        msg = "Я умею информировать тебя о котировках на акции фондового рынка США \n" + \
+            "Например Ты можешь сказать: расскажи об AAPL или NVDA\n" + \
+            "А я Тебе отвечу: AAPL (Apple Inc., NASDAQ): цена $242.2100067138672"
+
+        print(msg)
+        
+    if text.upper().find(listAbout) != -1:
+        user_id = 1
+        texst = text
+        texst = texst.upper().replace(listAbout, "").lstrip()
+        tickers = getTickers(texst)
+        msg, url, name = getCompaniInfo(tickers)
+        if url == "":
+            print(msg)
+        else:
+            print(msg + "12")
+            print(get_suggests(name, url))
+
+    aaa, tickers = getTickers(text)
+    print("tickers:")
+    print(tickers)
+    print("----------")
+    msg = ""
+    if len(tickers) == 0:
+        msg = "Извините, по таким тикерам ничего не найдено. Попробуйте еще раз!"
+    else:
+        msg = ""
+        for ticker in tickers:
+            try:
+                name = aaa[ticker]
+                price = str(si.get_live_price(ticker))
+                ex_desc = get_exchDisp(ticker)
+                msg += "{ticker} ({name}, {exchange}): цена ${price} \n".format(
+                    ticker = ticker,
+                    name = name,
+                    exchange = ex_desc,
+                    price = price
+                )
+            except Exception as e:
+                print( e)
+
+    print(msg)
+    
 
