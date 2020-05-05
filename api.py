@@ -92,7 +92,7 @@ def get_symbol(symbol):
             return x['name']
             
 def get_price_by(tic, count):
-    data = si.get_data('msft' , start_date = (datetime.today() - timedelta(days=count)).strftime('%m/%d/%Y') , end_date = datetime.today().strftime('%m/%d/%Y'))
+    data = si.get_data(tic , start_date = (datetime.today() - timedelta(days=count)).strftime('%m/%d/%Y') , end_date = datetime.today().strftime('%m/%d/%Y'))
     strr = ""
     for index, row in data.iterrows():
         strr += str(row[1]) + "\n"
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 #    thread.start()
 
 #    textForm = req['request']['original_utterance'].upper()
-    textForm = "Майкрософт".upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").replace("-","").replace("INC.", "").replace("GROUP", "").replace("CORPORATION", "").lstrip()
+    textForm = "за месяц аапл".upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").replace("-","").replace("INC.", "").replace("GROUP", "").replace("CORPORATION", "").lstrip()
     
     listHelp = ["ПОМОЩЬ", "ЧТО ТЫ УМЕЕШЬ?", "ЧТО ТЫ УМЕЕШЬ", "ЧТО УМЕЕШЬ", "ЧТО УМЕЕШЬ?"]
     listAbout = "ВИКИ О"
