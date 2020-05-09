@@ -17,7 +17,10 @@ import wikipedia
 from names_translator import Transliterator
 import difflib
 import itertools
-#from threading import Thread
+import threading
+import time
+import concurrent.futures
+import numpy
 
 # Импортируем подмодули Flask для запуска веб-сервиса.
 from flask import Flask, request
@@ -25,34 +28,6 @@ app = Flask(__name__)
 
 # Задаем параметры приложения Flask.
 @app.route("/", methods=['POST'])
-
-
-#class DownloadThread(Thread):
-#
-#    def __init__(self, name):
-#        Thread.__init__(self)
-#        self.name = name
-#
-#    def run(self):
-#        cred = credentials.Certificate('serviceAccountKey.json')
-#        # Initialize the app with a service account, granting admin privileges
-#        firebaseApp = firebase_admin.initialize_app(cred, {
-#            'databaseURL': 'https://boyko-quotes.firebaseio.com/'
-#        })
-#
-#        ref = db.reference('-M6W9myLcSdr3sibu1-8')
-#        arr = ref.get()
-#
-#
-#        with open('data.txt', 'w') as outfile:
-#            json.dump(arr, outfile)
-#
-#        firebase_admin.delete_app(firebaseApp)
-#
-##        msg = "%s закончил загрузку!" % (self.name)
-##        print(msg)
-
-
 
 
 def main():
@@ -74,6 +49,62 @@ def main():
         indent=2
     )
 
+def thread_function():
+    cred = credentials.Certificate('serviceAccountKey.json')
+    # Initialize the app with a service account, granting admin privileges
+    firebaseApp = firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://boyko-quotes.firebaseio.com/'
+    })
+
+    ref = db.reference('-M6W9myLcSdr3sibu1-8')
+    arr = ref.get()
+
+
+    with open('data.txt', 'w') as outfile:
+        json.dump(arr, outfile)
+
+    firebase_admin.delete_app(firebaseApp)
+    
+    print("thread_function is ok!")
+
+def thread_function_parse_All(count, tickerCompanyName, tickerName, tickerNameMap, textTranslate):
+    tickers = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=count) as executor:
+        for l1 in range(count):
+            future = executor.submit(thread_function_parse, tickerCompanyName, tickerName, tickerNameMap,textTranslate[l1])
+            return_value = future.result()
+            if len(future.result()) > 0:
+                tickers.extend(return_value)
+    return tickers
+    
+def thread_function_parse(tickerCompanyName, tickerName, tickerNameMap, textTranslate):
+    tickers = []
+            
+    if len(tickers) == 0:
+        realNames = []
+        
+        for t in textTranslate:
+            findName = difflib.get_close_matches(t, tickerCompanyName)
+            for fname in findName:
+                if fname not in realNames :
+                    realNames.append(fname)
+        if len(realNames) > 0:
+            arr = [0] * len(realNames)
+            for t in textTranslate:
+                temp = difflib.get_close_matches(t, realNames)
+                if len(temp) > 0:
+                    arr[realNames.index(temp[0])] += 1
+                    
+            tickers.append(tickerNameMap[realNames[arr.index(max(arr))]])
+            
+        else:
+            for t in textTranslate:
+                findName = difflib.get_close_matches(removeVowels(t), tickerName)
+                for fname in findName:
+                    if fname not in tickers :
+                        tickers.append(fname)
+    return tickers
+            
 def removeVowels(string):
     newstr = string.upper();
     vowels = ('A', 'E', 'I', 'O', 'U','Y');
@@ -139,7 +170,7 @@ def getTickers(text):
     tr = Transliterator()
     textCurrent = text
     textArray = text.split(' ')
-    textArray.append(text)
+#    textArray.append(text)
     textTranslate = []
     temp = []
     
@@ -156,6 +187,12 @@ def getTickers(text):
                         translate = val.upper()
                         textTranslate.append(translate)
                         temp.append(translate)
+    for val in tr.transliterate(text, "", ""):
+        if isEnglish(val):
+            if len(val) > 3 and val.upper() not in textTranslate:
+                translate = val.upper()
+                textTranslate.append(translate)
+                temp.append(translate)
     
     
 #    if len(temp) > 2:
@@ -164,25 +201,52 @@ def getTickers(text):
     if len(temp) > 1:
         for item in itertools.combinations(temp, 2):
             textTranslate.append(' '.join(item))
-    
-#    cred = credentials.Certificate('serviceAccountKey.json')
-#    # Initialize the app with a service account, granting admin privileges
-#    firebaseApp = firebase_admin.initialize_app(cred, {
-#        'databaseURL': 'https://boyko-quotes.firebaseio.com/'
-#    })
-#
-#    ref = db.reference('-M6W9myLcSdr3sibu1-8')
-#    arr = ref.get()
-#    print(json.dumps(arr))
-    
-#    with open('data.txt', 'w') as outfile:
-#        json.dump(arr, outfile)
+            
     arr = ""
     with open('data.txt') as json_file:
         arr = json.load(json_file)
+        
     
+    
+#    start = time.time()
+#    tickerCompanyName = []
+#    tickerCompanyNameSplit = []
+#    tickerName = []
+#    tickerNameMap = {}
+#    tickerStatMap = {}
+#    tickerNameMapRevert = {}
+#    for doc in arr:
+#        doccName = doc['Name'].replace(" Co", "").strip()
+#        tickerCompanyName.append(doccName)
+#        tkr = doc['Symbol']
+#        tickerName.append(tkr)
+#        tickerNameMap[doccName] = tkr
+#        tickerNameMapRevert[tkr] = doccName
+#        stat = doc['Stat']
+##            re.sub(r'\([^()]*\)', '', doc['Stat'].replace("=", "").replace("  ", " "))
+#        tickerStatMap[tkr] = stat[:900] + "..."
+#    count = 8
+#    textTranslate_split = numpy.array_split(numpy.array(textTranslate),count)
+##
+#    tickers = thread_function_parse_All(count, tickerCompanyName, tickerName, tickerNameMap, textTranslate_split)
+#    tick = ""
+#    if len(tickers) > 1:
+#        tick = [most_frequent(tickers)]
+#    else:
+#        tick = tickers
+#    return tickerStatMap, tickerNameMapRevert, tick
+#    with concurrent.futures.ThreadPoolExecutor(max_workers=14) as executor:
+#        for str in textTranslate:
+#            future = executor.submit(thread_function_parse_All, tickerCompanyName_split, tickerName_split, tickerNameMap, textTranslate_split)
+#            return_value = future.result()
+#            if len(return_value) > 0:
+#                tickers.extend(return_value)
+#    print(tickers)
+#    print("With ",14," threads: ", time.time() - start)
+#
     try:
-    
+        tickers = []
+        start = time.time()
         tickerCompanyName = []
         tickerCompanyNameSplit = []
         tickerName = []
@@ -196,7 +260,8 @@ def getTickers(text):
             tickerName.append(tkr)
             tickerNameMap[doccName] = tkr
             tickerNameMapRevert[tkr] = doccName
-            stat = re.sub(r'\([^()]*\)', '', doc['Stat'].replace("=", "").replace("  ", " "))
+            stat = doc['Stat']
+#            re.sub(r'\([^()]*\)', '', doc['Stat'].replace("=", "").replace("  ", " "))
             tickerStatMap[tkr] = stat[:900] + "..."
             for t in textTranslate:
                 if set(t.split(' ' )).issubset(set(doccName.split(' ' ))):
@@ -204,7 +269,7 @@ def getTickers(text):
                     tickers.append(tkr)
         if len(tickers) == 0:
             realNames = []
-            
+
             for t in textTranslate:
                 findName = difflib.get_close_matches(t, tickerCompanyName)
                 for fname in findName:
@@ -216,23 +281,23 @@ def getTickers(text):
                     temp = difflib.get_close_matches(t, realNames)
                     if len(temp) > 0:
                         arr[realNames.index(temp[0])] += 1
-                        
+
                 tickers.append(tickerNameMap[realNames[arr.index(max(arr))]])
-                
+
             else:
                 for t in textTranslate:
                     findName = difflib.get_close_matches(removeVowels(t), tickerName)
                     for fname in findName:
                         if fname not in tickers :
                             tickers.append(fname)
-                        
+
 #        firebase_admin.delete_app(firebaseApp)
         tick = ""
         if len(tickers) > 1:
             tick = [most_frequent(tickers)]
         else:
             tick = tickers
-        
+        print("Without threads: ",time.time() - start)
         return tickerStatMap, tickerNameMapRevert, tick
 
 
@@ -302,8 +367,9 @@ def getMsg_by_interval(textForm, count):
             
 # Функция для непосредственной обработки диалога.
 def handle_dialog(req, res):
-#    thread = DownloadThread("Back name")
-#    thread.start()
+
+    x = threading.Thread(target=thread_function, args=())
+    x.start()
     
     user_id = req['session']['user_id']
 #    textForm = req['request']['original_utterance'].upper()
@@ -445,11 +511,12 @@ def handle_dialog(req, res):
 
 
 if __name__ == "__main__":
-#    thread = DownloadThread("Back name")
-#    thread.start()
-
+    x = threading.Thread(target=thread_function, args=())
+    x.start()
+    
+# 1.0801479816436768
 #    textForm = req['request']['original_utterance'].upper()
-    textForm = "за месяц аапл".upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").replace("-","").replace("INC.", "").replace("GROUP", "").replace("CORPORATION", "").lstrip()
+    textForm = "генерал электрик".upper().replace(",", "").replace(" и ", " ").replace("пожалуйста", "").replace("например о", "").replace("чтото о" , "").replace("что-то о" , "").replace("расскажи о" , "").replace("расскажи о" , "").replace("-","").replace("INC.", "").replace("GROUP", "").replace("CORPORATION", "").lstrip()
     
     listHelp = ["ПОМОЩЬ", "ЧТО ТЫ УМЕЕШЬ?", "ЧТО ТЫ УМЕЕШЬ", "ЧТО УМЕЕШЬ", "ЧТО УМЕЕШЬ?"]
     listAbout = "ВИКИ О"
@@ -568,7 +635,5 @@ if __name__ == "__main__":
                     
                     if msg == "":
                         msg = "Извините, по этим компаниям мы не смогли узнать цену. Попробуйте еще раз!\n" + strangTickermsg
-                    
+
                     print(msg)
-                    
-#
